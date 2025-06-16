@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>HTML 페이지 선택</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 100px;
+    }
+    button {
+      width: 200px;
+      padding: 15px;
+      margin: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>페이지 선택</h1>
+
+  <button onclick="location.href='VSEPR.html'">1번 페이지</button>
+  <button onclick="location.href='page2.html'">2번 페이지</button>
+  <button onclick="location.href='page3.html'">3번 페이지</button>
+  <button onclick="location.href='page4.html'">4번 페이지</button>
+
+</body>
+</html>
