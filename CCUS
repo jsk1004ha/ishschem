@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCUS 기술 - 화학으로 대응하는 지구 온난화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .process-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .process-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .process-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .process-card.capture {
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .process-card.transport {
+            border-left: 5px solid #2196F3;
+        }
+        
+        .process-card.storage {
+            border-left: 5px solid #FF9800;
+        }
+        
+        .process-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .process-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .capture .process-icon { background: #4CAF50; }
+        .transport .process-icon { background: #2196F3; }
+        .storage .process-icon { background: #FF9800; }
+        
+        .chemical-reaction {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        .method-list {
+            margin: 15px 0;
+        }
+        
+        .method-item {
+            background: #f1f3f4;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border-left: 3px solid #666;
+        }
+        
+        .conditions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .conditions h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        
+        .storage-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .storage-type {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #ffcc02;
+        }
+        
+        .interactive-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1em;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .simulation-area {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .co2-molecule {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #ff4444;
+            border-radius: 50%;
+            margin: 5px;
+            animation: float 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 CCUS 기술</h1>
+            <p>화학으로 대응하는 지구 온난화 솔루션</p>
+        </div>
+        
+        <div class="process-container">
+            <div class="process-card capture" onclick="showDetails('capture')">
+                <div class="process-title">
+                    <div class="process-icon">1</div>
+                    포집 (Capture)
+                </div>
+                <p>산업 공정에서 배출된 CO₂를 선택적으로 분리하는 단계</p>
+                
+                <div class="chemical-reaction">
+                    <strong>아민 흡수 반응:</strong><br>
+                    RNH₂ + CO₂ → RNHCOO⁻ + H⁺
+                </div>
+                
+                <div class="method-list">
+                    <div class="method-item">
+                        <strong>화학적 흡수:</strong> 아민(MEA) 사용
+                    </div>
+                    <div class="method-item">
+                        <strong>물리적 흡착:</strong> 제올라이트, MOF 사용
+                    </div>
+                </div>
+            </div>
+            
+            <div class="process-card transport" onclick="showDetails('transport')">
+                <div class="process-title">
+                    <div class="process-icon">2</div>
+                    수송 (Transport)
+                </div>
+                <p>포집된 CO₂를 저장 장소로 안전하게 운반</p>
+                
+                <div class="conditions">
+                    <h4>수송 조건</h4>
+                    <p><strong>초임계 유체 상태:</strong> >31℃, >73 atm</p>
+                    <p>고압 상태로 액체 또는 초임계 유체로 수송</p>
+                </div>
+                
+                <div class="method-list">
+                    <div class="method-item">
+                        <strong>파이프라인:</strong> 가장 경제적
+                    </div>
+                    <div class="method-item">
+                        <strong>기타:</strong> 탱크트럭, 철도, 선박
+                    </div>
+                </div>
+            </div>
+            
+            <div class="process-card storage" onclick="showDetails('storage')">
+                <div class="process-title">
+                    <div class="process-icon">3</div>
+                    저장 (Storage)
+                </div>
+                <p>CO₂를 지하 깊숙한 곳에 안전하게 장기 저장</p>
+                
+                <div class="chemical-reaction">
+                    <strong>광물화 반응:</strong><br>
+                    CaSiO₃ + CO₂ → CaCO₃ + SiO₂
+                </div>
+                
+                <div class="storage-types">
+                    <div class="storage-type">
+                        <strong>지질 저장</strong><br>
+                        암석층 주입
+                    </div>
+                    <div class="storage-type">
+                        <strong>EOR</strong><br>
+                        석유 회수 증진
+                    </div>
+                    <div class="storage-type">
+                        <strong>광물화</strong><br>
+                        탄산염 생성
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="interactive-section">
+            <h2>🔬 상세 기술 정보</h2>
+            
+            <div class="tab-container">
+                <button class="tab active" onclick="showTab('reactions')">화학 반응</button>
+                <button class="tab" onclick="showTab('simulation')">시뮬레이션</button>
+                <button class="tab" onclick="showTab('benefits')">환경 효과</button>
+            </div>
+            
+            <div id="reactions" class="tab-content active">
+                <h3>주요 화학 반응 메커니즘</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 10px;">
+                        <h4>🧪 아민 흡수</h4>
+                        <div class="chemical-reaction">
+                            RNH₂ + CO₂ ⇌ RNHCOO⁻ + H⁺
+                        </div>
+                        <p>가역 반응으로 가열시 CO₂ 재생 가능</p>
+                    </div>
+                    
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 10px;">
+                        <h4>⚡ 물리적 흡착</h4>
+                        <p>다공성 물질 표면에 CO₂ 분자가 물리적으로 부착</p>
+                        <p><strong>장점:</strong> 에너지 효율적, 재생 용이</p>
+                    </div>
+                    
+                    <div style="background: #fff4e6; padding: 20px; border-radius: 10px;">
+                        <h4>🪨 광물화 저장</h4>
+                        <div class="chemical-reaction">
+                            CaSiO₃ + CO₂ → CaCO₃ + SiO₂
+                        </div>
+                        <p>영구적 고체 탄산염 형성</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="simulation" class="tab-content">
+                <h3>CO₂ 포집 시뮬레이션</h3>
+                <div class="simulation-area">
+                    <p>CO₂ 분자들이 포집되는 과정:</p>
+                    <div id="molecules">
+                        <div class="co2-molecule"></div>
+                        <div class="co2-molecule"></div>
+                        <div class="co2-molecule"></div>
+                        <div class="co2-molecule"></div>
+                        <div class="co2-molecule"></div>
+                    </div>
+                    <br>
+                    <button class="btn" onclick="startCapture()">포집 시작</button>
+                    <button class="btn" onclick="resetSimulation()">리셋</button>
+                </div>
+                <div id="capture-result" style="margin-top: 20px; text-align: center; font-weight: bold;"></div>
+            </div>
+            
+            <div id="benefits" class="tab-content">
+                <h3>🌱 환경적 효과</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h2 style="color: #4CAF50;">85-95%</h2>
+                        <p>CO₂ 포집 효율</p>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h2 style="color: #2196F3;">1000년+</h2>
+                        <p>지질 저장 안정성</p>
+                    </div>
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h2 style="color: #FF9800;">40%</h2>
+                        <p>온실가스 감축 기여도</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🔬 화학 기술로 만드는 지속가능한 미래</p>
+            <p>CCUS 기술은 지구 온난화 대응의 핵심 솔루션입니다</p>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+        
+        function showDetails(process) {
+            alert(`${process} 단계에 대한 상세 정보를 확인하세요!\n\n각 카드를 클릭하여 더 자세한 내용을 학습할 수 있습니다.`);
+        }
+        
+        function startCapture() {
+            const molecules = document.querySelectorAll('.co2-molecule');
+            const result = document.getElementById('capture-result');
+            
+            molecules.forEach((molecule, index) => {
+                setTimeout(() => {
+                    molecule.style.background = '#4CAF50';
+                    molecule.style.transform = 'scale(0.8)';
+                }, index * 300);
+            });
+            
+            setTimeout(() => {
+                result.innerHTML = '✅ CO₂ 포집 완료! 아민과의 화학 반응을 통해 성공적으로 분리되었습니다.';
+                result.style.color = '#4CAF50';
+            }, 1500);
+        }
+        
+        function resetSimulation() {
+            const molecules = document.querySelectorAll('.co2-molecule');
+            const result = document.getElementById('capture-result');
+            
+            molecules.forEach(molecule => {
+                molecule.style.background = '#ff4444';
+                molecule.style.transform = 'scale(1)';
+            });
+            
+            result.innerHTML = '';
+        }
+        
+        // 페이지 로드시 애니메이션
+        window.addEventListener('load', () => {
+            const cards = document.querySelectorAll('.process-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.6s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>
