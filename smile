@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMILES 2D & 3D 구조 시각화</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f6f8;
+      color: #333;
+    }
+    header {
+      background-color: #1976d2;
+      color: white;
+      padding: 1em;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    main {
+      max-width: 1000px;
+      margin: 2em auto;
+      background: white;
+      padding: 2em;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .input-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 2em;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75em;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      max-width: 500px;
+    }
+    button {
+      padding: 0.75em 1.5em;
+      background-color: #1976d2;
+      color: white;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #1565c0;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+    #viewer {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-top: 1em;
+    } 
+    
+    .panel {
+      flex: 1;
+      min-width: 300px;
+      background: #fafafa;
+      padding: 1em;
+      border-radius: 8px;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+    } 
+    #moleculeImage {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-top: 1em;
+    }
+    #infoBox {
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1em;
+      margin-top: 1em;
+      border-radius: 6px;
+    }
+    #chemicalName {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 1em;
+      font-size: 1.2em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5em;
+      text-align: left;
+    }
+    th {
+      background-color: #e3f2fd;
+    }
+    #drugSelector {
+      display: none;
+      margin-top: 1em;
+      text-align: center;
+    }
+    #drugModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    #drugModalContent {
+      background: white;
+      padding: 2em;
+      border-radius: 12px;
+      width: 300px;
+      text-align: center;
+    }
+    #closeModalBtn {
+      margin-top: 1em;
+      background-color: #f44336;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SMILES 2D & 3D 구조 시각화</h1>
+</header>
+
+<main>
+  <p style="text-align: center;">화학 물질 이름 또는 SMILES 코드를 입력하면 구조를 시각화합니다.</p>
+  <div class="input-group">
+    <input type="text" id="smiles" placeholder="예: 아스피린 또는 CC(=O)Oc1ccccc1C(=O)O" />
+    <button onclick="showMolecule()">보기</button>
+    <button onclick="toggleInfo()">SMILES 정보</button>
+    <button onclick="openDrugSelector()">항암제 보기</button>
+  </div>
+
+  <div id="chemicalName">화학물질 이름이 여기에 표시됩니다</div>
+
+  <div id="infoBox">
+    <h4>SMILES 표기 예시</h4>
+    <p>아래는 대표적인 분자와 해당하는 SMILES 표기입니다.</p>
+    <table>
+      <thead>
+        <tr><th>분자 이름</th><th>SMILES 코드</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>물</td><td>O</td><td>산소 1개에 수소 2개가 결합</td></tr>
+        <tr><td>메탄</td><td>C</td><td>탄소 1개</td></tr>
+        <tr><td>에탄</td><td>CC</td><td>탄소 2개 연결</td></tr>
+        <tr><td>아세트산</td><td>CC(=O)O</td><td>카복실기 포함</td></tr>
+        <tr><td>벤젠</td><td>c1ccccc1</td><td>방향족 고리 구조</td></tr>
+        <tr><td>아스피린</td><td>CC(=O)Oc1ccccc1C(=O)O</td><td>에스터와 방향족 고리 포함</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="container">
+    <div class="panel">
+      <h3>2D 구조식</h3>
+      <img id="moleculeImage" src="" alt="2D 구조식 이미지" />
+    </div>
+    <div class="panel">
+      <h3>3D 구조</h3>
+      <div id="viewer"></div>
+    </div>
+  </div>
+</main>
+
+<div id="drugModal">
+  <div id="drugModalContent">
+    <h3>항암제를 선택하세요</h3>
+    <select id="drugSelect">
+      <option value="doxorubicin">독소루비신</option>
+      <option value="paclitaxel">파클리탁셀</option>
+      <option value="cisplatin">시스플라틴</option>
+      <option value="imatinib">이매티닙</option>
+    </select>
+    <button onclick="selectDrug()">선택</button>
+    <button id="closeModalBtn" onclick="closeDrugSelector()">닫기</button>
+  </div>
+</div>
+
+<script>
+function toggleInfo() {
+  const infoBox = document.getElementById('infoBox');
+  infoBox.style.display = infoBox.style.display === 'none' || !infoBox.style.display ? 'block' : 'none';
+}
+
+function openDrugSelector() {
+  document.getElementById("drugModal").style.display = "flex";
+}
+
+function closeDrugSelector() {
+  document.getElementById("drugModal").style.display = "none";
+}
+
+function selectDrug() {
+  const drug = document.getElementById("drugSelect").value;
+  document.getElementById("smiles").value = drug;
+  closeDrugSelector();
+  showMolecule();
+}
+
+function showMolecule() {
+  const input = document.getElementById("smiles").value.trim();
+  if (!input) {
+    alert("SMILES 코드나 화학물질 이름을 입력하세요.");
+    return;
+  }
+
+  const nameBox = document.getElementById("chemicalName");
+  nameBox.innerText = "이름 불러오는 중...";
+
+  const korNameMap = {
+    aspirin: "아스피린",
+    ethanol: "에탄올",
+    water: "물",
+    glucose: "포도당",
+    acetone: "아세톤",
+    caffeine: "카페인",
+    benzene: "벤젠",
+    aceticacid: "아세트산",
+    methane: "메탄",
+    ethane: "에탄",
+    doxorubicin: "독소루비신",
+    paclitaxel: "파클리탁셀",
+    cisplatin: "시스플라틴",
+    imatinib: "이매티닙"
+  };
+  const normalized = input.toLowerCase().replace(/[^a-z0-9]/gi, "");
+
+  const iupacUrl = `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(input)}/iupac_name`;
+  fetch(iupacUrl)
+    .then(r => r.ok ? r.text() : Promise.reject("없음"))
+    .then(iupac => {
+      const korean = korNameMap[normalized] || "알 수 없음";
+      nameBox.innerText = `화학물질 이름: ${korean} / ${iupac}`;
+    })
+    .catch(() => {
+      nameBox.innerText = "화학물질 이름을 불러올 수 없습니다.";
+    });
+
+    const imgUrl = `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(input)}/image`;
+    document.getElementById("moleculeImage").src = imgUrl;
+
+    const viewerDiv = document.getElementById("viewer");
+    viewerDiv.innerHTML = "";
+    const viewer = $3Dmol.createViewer('viewer', { backgroundColor: "white" });
+    const sdfUrl = `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(input)}/sdf`;
+
+    fetch(sdfUrl)
+      .then(response => {
+      if (!response.ok) throw new Error("3D 구조 없음");
+      return response.text();
+    })
+    .then(data => {
+      viewer.addModel(data, "sdf");
+      viewer.setStyle({}, { stick: {}, sphere: { scale: 0.3 } });
+      viewer.zoomTo();
+      viewer.render();
+    })
+    .catch(err => {
+      alert("3D 구조를 불러오는 데 실패했습니다: " + err.message);
+    });
+}
+</script>
+
+</body>
+</html>
