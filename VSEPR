@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공유결합 분자 구조 분석기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap');
+        body { font-family: 'Nanum Gothic', sans-serif; background-color: #f4f7f9; color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 800px; background-color: #fff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); padding: 30px; }
+        h1 { color: #005a9c; text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 15px; margin-top: 0; }
+        .disclaimer { text-align: center; font-size: 13px; color: #c0392b; margin-bottom: 20px; padding: 10px; background-color: #fbeee6; border: 1px solid #e57373; border-radius: 8px; font-weight: bold; line-height: 1.6; }
+        .input-area, .examples { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        #formula-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        #predict-btn { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
+        #predict-btn:hover { background-color: #0056b3; }
+        .example-btn { background-color: #e9ecef; border: 1px solid #dee2e6; border-radius: 15px; padding: 5px 12px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
+        .example-btn:hover { background-color: #d8dde2; }
+        .controls-area { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; background-color: #f8f9fa; padding: 10px; border-radius: 8px;}
+        .controls-area label { cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;}
+        .step { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        h3 { margin-top: 0; color: #1d3557; display: flex; align-items: center; }
+        .step-number { background-color: #007bff; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 700; margin-right: 12px; flex-shrink: 0; }
+        #lewis-canvas { width: 100%; max-width: 400px; aspect-ratio: 1 / 1; display: block; margin: 0 auto; background: #fff; border-radius: 8px; border: 1px solid #dee2e6;}
+        .vsepr-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: center; }
+        .vsepr-table th, .vsepr-table td { border: 1px solid #dee2e6; padding: 10px; font-size: 14px; }
+        .vsepr-table th { background-color: #e9ecef; }
+        .vsepr-table td.highlight { font-weight: bold; color: #d90429; }
+        .error { color: #d90429; font-weight: bold; text-align: center; padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>공유결합 분자 구조 분석기</h1>
+        <p class="disclaimer">
+            ※ 본 분석기는 <strong>단일 중심 원자를 갖는 주족 원소 화합물</strong>에 최적화되었습니다.<br>
+            - <strong>전이 원소, 란타넘·악티늄족</strong>은 내부 d/f 전자 껍질이 불완전하게 채워져 있어 VSEPR 이론을 적용할 수 없으므로 지원하지 않습니다.<br>
+            - <strong>중심 원자가 여러 개인 분자 (예: C2H5OH)</strong>는 현재 지원하지 않습니다. (단, N₂, O₂ 등 동핵 이원자 분자는 예외)
+        </p>
+        <div class="input-area">
+            <input type="text" id="formula-input" placeholder="화학식 입력 (예: PCl5)" value="PCl5">
+            <button id="predict-btn">분석하기</button>
+        </div>
+        <div class="examples">
+            <button class="example-btn">CO2</button>
+            <button class="example-btn">NH3</button>
+            <button class="example-btn">PCl5</button>
+            <button class="example-btn">SO4^2-</button>
+            <button class="example-btn">AsF5</button>
+            <button class="example-btn">XeF4</button>
+        </div>
+        <div class="controls-area">
+            <label><input type="checkbox" id="toggle-lone-pairs" checked> 비공유 전자쌍 보기</label>
+            <label><input type="checkbox" id="toggle-formal-charge" checked> 형식전하 보기</label>
+        </div>
+        <div id="result-area"></div>
+    </div>
+
+    <script>
+        const ELEMENT_DATA = { H:{v:1,en:2.20,p:1},He:{v:2,en:0,p:1},Li:{v:1,en:0.98,p:2},Be:{v:2,en:1.57,p:2},B:{v:3,en:2.04,p:2},C:{v:4,en:2.55,p:2},N:{v:5,en:3.04,p:2},O:{v:6,en:3.44,p:2},F:{v:7,en:3.98,p:2},Ne:{v:8,en:0,p:2},Na:{v:1,en:0.93,p:3},Mg:{v:2,en:1.31,p:3},Al:{v:3,en:1.61,p:3},Si:{v:4,en:1.90,p:3},P:{v:5,en:2.19,p:3},S:{v:6,en:2.58,p:3},Cl:{v:7,en:3.16,p:3},Ar:{v:8,en:0,p:3},K:{v:1,en:0.82,p:4},Ca:{v:2,en:1.00,p:4},Ga:{v:3,en:1.81,p:4},Ge:{v:4,en:2.01,p:4},As:{v:5,en:2.18,p:4},Se:{v:6,en:2.55,p:4},Br:{v:7,en:2.96,p:4},Kr:{v:8,en:3.00,p:4},I:{v:7,en:2.66,p:5},Xe:{v:8,en:2.60,p:5} };
+        const VSEPR_GEOMETRIES = {2:{0:{e:"선형",m:"선형"}},3:{0:{e:"평면 삼각형",m:"평면 삼각형"},1:{e:"평면 삼각형",m:"굽은형"}},4:{0:{e:"사면체",m:"사면체"},1:{e:"사면체",m:"삼각뿔"},2:{e:"사면체",m:"굽은형"}},5:{0:{e:"삼각 쌍뿔",m:"삼각 쌍뿔"},1:{e:"삼각 쌍뿔",m:"시소형"},2:{e:"삼각 쌍뿔",m:"T자형"},3:{e:"삼각 쌍뿔",m:"선형"}},6:{0:{e:"팔면체",m:"팔면체"},1:{e:"팔면체",m:"사각뿔"},2:{e:"팔면체",m:"평면 사각형"}}};
+        const VSEPR_ANGLES = { 2:{0:"180°"}, 3:{0:"120°",1:"<120°"}, 4:{0:"109.5°",1:"≈107°",2:"≈104.5°"}, 5:{0:"90°, 120°",1:"<90°, <120°",2:"≈90°",3:"180°"}, 6:{0:"90°",1:"<90°",2:"90°"} };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const appState = { showLonePairs: true, showFormalCharges: true, lastAnalysisResult: null };
+            const DOM = { formulaInput: document.getElementById('formula-input'), predictBtn: document.getElementById('predict-btn'), exampleBtns: document.querySelectorAll('.example-btn'), toggleLonePairs: document.getElementById('toggle-lone-pairs'), toggleFormalCharge: document.getElementById('toggle-formal-charge'), resultArea: document.getElementById('result-area') };
+            
+            function init() {
+                DOM.predictBtn.addEventListener('click', () => predictStructure(DOM.formulaInput.value));
+                DOM.formulaInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') predictStructure(DOM.formulaInput.value); });
+                DOM.exampleBtns.forEach(b => b.addEventListener('click', () => { DOM.formulaInput.value = b.textContent; predictStructure(b.textContent); }));
+                DOM.toggleLonePairs.addEventListener('change', (e) => { appState.showLonePairs = e.target.checked; drawOnCanvas(); });
+                DOM.toggleFormalCharge.addEventListener('change', (e) => { appState.showFormalCharges = e.target.checked; drawOnCanvas(); });
+                predictStructure(DOM.formulaInput.value);
+            }
+
+            function predictStructure(formulaStr) {
+                try {
+                    const { atoms, charge } = parseFormula(formulaStr);
+                    checkForMultipleCenters(atoms);
+                    const totalValenceElectrons = calculateTotalValenceElectrons(atoms, charge);
+                    const centralAtomSymbol = determineCentralAtom(atoms);
+                    let { structure } = buildInitialStructure(centralAtomSymbol, atoms);
+                    let remainingElectrons = distributeLonePairs(structure, totalValenceElectrons - (structure.length - 1) * 2);
+                    const centralAtom = structure.find(a => a.isCentral);
+                    if (remainingElectrons > 0 && centralAtom) {
+                        if (ELEMENT_DATA[centralAtom.symbol].p >= 3) { centralAtom.lonePairs += Math.floor(remainingElectrons / 2); }
+                        else { throw new Error(`중심 원자(${centralAtom.symbol})는 옥텟 확장이 불가한데 전자가 남습니다.`); }
+                    }
+                    structure = optimizeStructure(structure);
+                    const vseprAnalysis = analyzeVSEPR(centralAtom);
+                    
+                    appState.lastAnalysisResult = { totalValenceElectrons, charge, structure, centralAtom, vsepr: vseprAnalysis };
+                    renderResults(appState.lastAnalysisResult);
+                    drawOnCanvas();
+                } catch (error) {
+                    console.error(error);
+                    displayError(error.message);
+                }
+            }
+            
+            function parseFormula(f){if(!f||!f.trim())throw new Error("화학식을 입력해주세요.");const cM=f.match(/(\d*)([+-])$/);let c=0;if(cM){let v=cM[1]?parseInt(cM[1]):1;c=(cM[2]==='+')?v:-v;f=f.slice(0,cM.index);}const a={};const aM=f.matchAll(/([A-Z][a-z]?)(\d*)/g);for(const m of aM){const s=m[1];if(!ELEMENT_DATA[s]){throw new Error(`'${s}'는 알 수 없는 원소입니다.`);}a[s]=(a[s]||0)+(m[2]?parseInt(m[2]):1);}if(Object.keys(a).length===0)throw new Error("유효한 화학식을 입력해주세요.");return{atoms:a,charge:c};}
+            function calculateTotalValenceElectrons(a,c){const t=Object.entries(a).reduce((s,[sym,cnt])=>s+ELEMENT_DATA[sym].v*cnt,0)-c;if(t<0||t%2!==0)throw new Error("총 원자가 전자가 홀수(라디칼)이거나 음수입니다.");return t;}
+            
+            function checkForMultipleCenters(atoms) {
+                if (Object.keys(atoms).length === 1 && Object.values(atoms)[0] === 2) { return; }
+                const skeletonSymbols = ['B', 'C', 'N', 'P', 'S', 'Si'];
+                let skeletonAtomCount = 0;
+                for (const sym of skeletonSymbols) { if (atoms[sym]) { skeletonAtomCount += atoms[sym]; } }
+                if (skeletonAtomCount === 0 && atoms['O'] && atoms['O'] > 1) { throw new Error("중심 원자가 여러 개인 분자(예: H2O2)는 현재 지원하지 않습니다."); }
+                if (skeletonAtomCount > 1) { throw new Error("중심 원자가 여러 개인 분자(예: C2H5OH)는 현재 지원하지 않습니다."); }
+            }
+
+            function determineCentralAtom(atoms) {
+                const symbols = Object.keys(atoms).filter(sym => atoms[sym] > 0);
+                if (symbols.length === 1) return symbols[0];
+                if (symbols.length === 2 && atoms['H']) return symbols.find(sym => sym !== 'H');
+
+                const candidates = symbols.filter(sym => sym !== 'H' && sym !== 'F');
+                if (candidates.length === 0) throw new Error("중심 원자를 결정할 수 없습니다.");
+                if (candidates.length === 1) return candidates[0];
+
+                let minCount = Infinity;
+                let atomsWithMinCount = [];
+                for (const sym of candidates) {
+                    if (atoms[sym] < minCount) {
+                        minCount = atoms[sym];
+                        atomsWithMinCount = [sym];
+                    } else if (atoms[sym] === minCount) {
+                        atomsWithMinCount.push(sym);
+                    }
+                }
+
+                if (atomsWithMinCount.length === 1) return atomsWithMinCount[0];
+                
+                return atomsWithMinCount.sort((a,b) => ELEMENT_DATA[a].en - ELEMENT_DATA[b].en)[0];
+            }
+
+            function buildInitialStructure(centralSymbol, atoms) {
+                let idCounter = 0;
+                const centralAtom = { id: idCounter++, symbol: centralSymbol, bonds: [], lonePairs: 0, isCentral: true };
+                const structure = [centralAtom];
+                for (const [symbol, count] of Object.entries(atoms)) {
+                    let loopCount = (symbol === centralSymbol) ? count - 1 : count;
+                    for (let i = 0; i < loopCount; i++) {
+                        const terminalAtom = { id: idCounter++, symbol: symbol, bonds: [{ target: centralAtom.id, order: 1 }], lonePairs: 0, isCentral: false };
+                        structure.push(terminalAtom);
+                        centralAtom.bonds.push({ target: terminalAtom.id, order: 1 });
+                    }
+                }
+                return { structure };
+            }
+
+            function distributeLonePairs(s,rE){const term=s.filter(a=>!a.isCentral).sort((a,b)=>ELEMENT_DATA[b.symbol].en-ELEMENT_DATA[a.symbol].en);for(const a of term){rE=fillOctet(a,rE);}const cent=s.find(a=>a.isCentral);if(cent){rE=fillOctet(cent,rE);}return rE;}
+            function fillOctet(a,e){const l=(a.symbol==='H')?2:8;while(getElectronCount(a)<l&&e>=2){a.lonePairs++;e-=2;}return e;}
+            
+            function optimizeStructure(structure) {
+                for (let i = 0; i < 5; i++) {
+                    calculateAllFormalCharges(structure);
+                    const octetDeficientAtom = structure.find(atom => getElectronCount(atom) < 8 && !['H', 'Be', 'B'].includes(atom.symbol));
+                    if (!octetDeficientAtom) break;
+                    const donor = findBestElectronDonor(structure, octetDeficientAtom);
+                    if (donor) formMultipleBond(octetDeficientAtom, donor); else break;
+                }
+                const central = structure.find(a => a.isCentral);
+                if (central && ELEMENT_DATA[central.symbol].p >= 3) {
+                    for (let i = 0; i < 4; i++) {
+                        calculateAllFormalCharges(structure);
+                        if (central.fc <= 0) break;
+                        const donor = findBestElectronDonor(structure, central, true);
+                        if (donor) formMultipleBond(central, donor); else break;
+                    }
+                }
+                calculateAllFormalCharges(structure);
+                return structure;
+            }
+
+            function analyzeVSEPR(a){if(!a)return null;const bG=a.bonds.length,lP=a.lonePairs,sN=bG+lP;const g=VSEPR_GEOMETRIES[sN]?.[lP]||{e:'?',m:'?'};const ang=VSEPR_ANGLES[sN]?.[lP]||'?';return{sn:sN,bonding:bG,lone:lP,electronGeom:g.e,molecularGeom:g.m,angle:ang};}
+            function getElectronCount(a){return a.bonds.reduce((s,b)=>s+b.order*2,0)+a.lonePairs*2;}
+            function getFormalCharge(a){return ELEMENT_DATA[a.symbol].v-a.lonePairs*2-a.bonds.reduce((s,b)=>s+b.order,0);}
+            function calculateAllFormalCharges(s){s.forEach(a=>{a.fc=getFormalCharge(a);});}
+            function findBestElectronDonor(str,c,m){const n=c.bonds.map(b=>str.find(a=>a.id===b.target));const pD=n.filter(a=>{if(a.lonePairs<=0)return false;if(m&&a.fc>=0)return false;return true;});pD.sort((a,b)=>{if(a.fc!==b.fc)return a.fc-b.fc;return ELEMENT_DATA[a.symbol].en-ELEMENT_DATA[b.symbol].en;});return pD[0];}
+            function formMultipleBond(a1,a2){if(!a1||!a2||a2.lonePairs<=0)return;a2.lonePairs--;const b1=a1.bonds.find(b=>b.target===a2.id);const b2=a2.bonds.find(b=>b.target===a1.id);if(b1&&b2){b1.order++;b2.order++;}}
+            
+            function renderResults({totalValenceElectrons,charge,structure,centralAtom,vsepr}) {
+                 const fcString = structure.map(a => `${a.symbol}${a.id}: ${a.fc > 0 ? '+' + a.fc : a.fc}`).join(', ');
+                 const analysisRow = `<tr><td>${centralAtom.symbol}</td><td>${vsepr.sn}</td><td>${vsepr.bonding}</td><td>${vsepr.lone}</td><td>${vsepr.electronGeom}</td><td>${vsepr.molecularGeom}</td><td class="highlight">${vsepr.angle}</td></tr>`;
+                 DOM.resultArea.innerHTML = `<div class="step"><h3><span class="step-number">1</span>구조 시각화</h3><canvas id="lewis-canvas"></canvas></div><div class="step"><h3><span class="step-number">2</span>VSEPR 이론 분석</h3><table class="vsepr-table"><thead><tr><th>중심원자</th><th>입체수(SN)</th><th>공유쌍</th><th>비공유쌍</th><th>전자쌍 배열</th><th>분자 구조</th><th>결합각(예상)</th></tr></thead><tbody>${analysisRow}</tbody></table></div><div class="step"><h3><span class="step-number">3</span>루이스 구조 정보</h3><p>총 원자가 전자: <b>${totalValenceElectrons}개</b> (전하 ${charge} 반영).<br>최종 형식 전하 분포: [${fcString}].</p></div>`;
+            }
+            function displayError(message) { appState.lastAnalysisResult = null; if(DOM.resultArea) { DOM.resultArea.innerHTML = `<p class="error"><b>분석 오류:</b> ${message}</p>`; } }
+            
+            function drawOnCanvas() {
+                if (!appState.lastAnalysisResult) return;
+                const { structure, vsepr, charge, centralAtom } = appState.lastAnalysisResult;
+                const canvas = document.getElementById('lewis-canvas'); if (!canvas) return;
+                const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const rect = canvas.getBoundingClientRect(); canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; ctx.scale(dpr, dpr); ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (!centralAtom || !vsepr) return;
+                const positions = getGeometricPositions(structure, centralAtom, vsepr, rect.width, rect.height);
+                structure.forEach(a => { a.pos = positions[a.id]; });
+                structure.forEach(a1 => { if (!a1.pos) return; a1.bonds.forEach(b => { const a2 = structure.find(a => a.id === b.target); if (!a2 || !a2.pos || a1.id > a2.id) return; drawBond(ctx, a1.pos, a2.pos, b.order); }); });
+                structure.forEach(a => { if (!a.pos) return; drawLonePairs(ctx, a, structure); drawAtom(ctx, a.pos, a.symbol, a.fc); });
+                if (charge !== 0) { ctx.font = 'bold 20px sans-serif'; ctx.fillStyle = charge > 0 ? '#007bff' : '#d90429'; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText(`[${Math.abs(charge)}${charge > 0 ? '+' : '-'}]`, rect.width - 10, 10); }
+            }
+            
+            function getGeometricPositions(str,cent,vsepr,w,h){
+                const pos={}; const cPos={x:w/2,y:h/2}; let r=Math.min(w,h)/3.5; pos[cent.id]=cPos;
+                const neighbors=str.filter(a=>!a.isCentral); const lpCount=cent.lonePairs; let baseCoords=[];
+                switch(vsepr.sn){
+                    case 2:baseCoords=[{x:-r,y:0},{x:r,y:0}];break;
+                    case 3:baseCoords=[{x:0,y:-r},{x:-r*0.87,y:r*0.5},{x:r*0.87,y:r*0.5}];break;
+                    case 4:baseCoords=[{x:0,y:-r},{x:-r*0.95,y:r*0.31},{x:r*0.95,y:r*0.31},{x:0,y:r*0.8}];break;
+                    case 5: baseCoords=[{x:0,y:-r},{x:0,y:r},{x:r,y:0},{x:-r*0.5,y:-r*0.87},{x:-r*0.5,y:r*0.87}]; break;
+                    case 6:baseCoords=[{x:0,y:-r},{x:0,y:r},{x:r,y:0},{x:-r,y:0},{x:r*0.7,y:-r*0.7},{x:-r*0.7,y:r*0.7}];break;
+                    default:for(let i=0;i<vsepr.sn;i++)baseCoords.push({x:r*Math.cos(2*Math.PI*i/vsepr.sn-Math.PI/2),y:r*Math.sin(2*Math.PI*i/vsepr.sn-Math.PI/2)});break;
+                }
+                cent.lp_coords=[];let availableCoords=[...baseCoords];
+                if(lpCount>0){
+                    let lpIndices=[];
+                    if(vsepr.sn===5){ lpIndices=[2,3,4].slice(0,lpCount);
+                    }else if(vsepr.sn===6&&lpCount===2){lpIndices=[0,1];
+                    }else if(vsepr.sn===4&&lpCount>0){lpIndices=[3,2,0].slice(0,lpCount);
+                    }else{for(let i=0;i<lpCount;i++)lpIndices.push(baseCoords.length-1-i);}
+                    const lpPos=lpIndices.map(i=>baseCoords[i]).filter(Boolean);
+                    cent.lp_coords=lpPos.map(c=>({x:cPos.x+c.x,y:cPos.y+c.y}));
+                    availableCoords=baseCoords.filter(c=>!lpPos.includes(c));
+                }
+                neighbors.forEach((n,i)=>{if(availableCoords[i])pos[n.id]={x:cPos.x+availableCoords[i].x,y:cPos.y+availableCoords[i].y};});
+                return pos;
+            }
+            function drawAtom(ctx,pos,sym,fc){const r=18;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,2*Math.PI);ctx.fill();ctx.strokeStyle='#333';ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle='#000';ctx.font=`bold ${r*1.1}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(sym,pos.x,pos.y);if(appState.showFormalCharges&&fc!==0&&typeof fc==='number'){ctx.fillStyle=fc>0?'#007bff':'#d90429';ctx.font='bold 12px sans-serif';ctx.fillText(fc>0?`+${fc}`:`${fc}`,pos.x+r-4,pos.y-r+4);}}
+            function drawBond(ctx,p1,p2,o){ctx.strokeStyle='#333';ctx.lineWidth=2.5;const os=5;const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy),ux=dx/len,uy=dy/len;const dL=(x,y)=>{ctx.beginPath();ctx.moveTo(p1.x+x,p1.y+y);ctx.lineTo(p2.x+x,p2.y+y);ctx.stroke();};if(o===1)dL(0,0);else if(o===2){dL(-uy*os,ux*os);dL(uy*os,-ux*os);}else if(o===3){dL(0,0);dL(-uy*os*1.2,ux*os*1.2);dL(uy*os*1.2,-ux*os*1.2);}}
+            function drawLonePairs(ctx,atom,str){if(!appState.showLonePairs||atom.lonePairs===0)return;if(atom.isCentral&&atom.lp_coords){atom.lp_coords.forEach(lp_pos=>{drawElectronPair(ctx,atom.pos,lp_pos);});}else if(!atom.isCentral){const bond=atom.bonds[0];if(!bond)return;const neighbor=str.find(a=>a.id===bond.target);if(!neighbor||!neighbor.pos)return;const baseAngle=Math.atan2(atom.pos.y-neighbor.pos.y,atom.pos.x-neighbor.pos.x);const angles=[];if(atom.lonePairs===1){angles.push(baseAngle);}else if(atom.lonePairs===2){angles.push(baseAngle-Math.PI/3);angles.push(baseAngle+Math.PI/3);}else if(atom.lonePairs===3){angles.push(baseAngle-Math.PI/2);angles.push(baseAngle);angles.push(baseAngle+Math.PI/2);}
+            angles.forEach(angle=>{const targetPos={x:atom.pos.x+30*Math.cos(angle),y:atom.pos.y+30*Math.sin(angle)};drawElectronPair(ctx,atom.pos,targetPos);});}}
+            function drawElectronPair(ctx,aPos,tPos){const dotR=2.5,offR=22,pD=7;ctx.fillStyle='#007bff';const angle=Math.atan2(tPos.y-aPos.y,tPos.x-aPos.x);const cX=aPos.x+offR*Math.cos(angle);const cY=aPos.y+offR*Math.sin(angle);const pA=angle+Math.PI/2;const x1=cX+pD/2*Math.cos(pA),y1=cY+pD/2*Math.sin(pA),x2=cX-pD/2*Math.cos(pA),y2=cY-pD/2*Math.sin(pA);ctx.beginPath();ctx.arc(x1,y1,dotR,0,2*Math.PI);ctx.fill();ctx.beginPath();ctx.arc(x2,y2,dotR,0,2*Math.PI);ctx.fill();}
+            
+            init();
+        });
+    </script>
+</body>
+</html>
