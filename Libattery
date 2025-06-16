@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리튬 이온 배터리 시뮬레이터</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 20px;
+        }
+
+        .battery-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            grid-column: 1 / -1;
+        }
+
+        .battery-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .electrode {
+            width: 180px;
+            height: 250px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.2);
+        }
+
+        .anode {
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            color: white;
+        }
+
+        .cathode {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .separator {
+            width: 30px;
+            height: 250px;
+            background: linear-gradient(to right, #f39c12, #e67e22);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .separator h3 {
+            writing-mode: vertical-rl;
+            font-size: 12px;
+            color: white;
+        }
+
+        .lithium-ions {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .lithium-ion {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #f1c40f, #f39c12);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            animation: float 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-15px) scale(1.1); }
+        }
+
+        .ion-flow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .moving-ion {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #3498db, #2980b9);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+            animation: moveIon 2s linear infinite;
+        }
+
+        @keyframes moveIon {
+            0% { 
+                left: 10%; 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            10% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            90% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% { 
+                left: 90%; 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .external-circuit {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .electron-flow {
+            flex: 1;
+            height: 5px;
+            background: linear-gradient(to right, #95a5a6, #7f8c8d);
+            position: relative;
+            border-radius: 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .moving-electron {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #e74c3c, #c0392b);
+            border-radius: 50%;
+            top: -2px;
+            border: 1px solid #fff;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+            animation: moveElectron 1.5s linear infinite;
+        }
+
+        @keyframes moveElectron {
+            0% { 
+                left: -10px; 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            10% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            90% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% { 
+                left: 110%; 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .load {
+            background: linear-gradient(145deg, #34495e, #2c3e50);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 0 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn.charge {
+            background: linear-gradient(145deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn.discharge {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn.pause {
+            background: linear-gradient(145deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn.reset {
+            background: linear-gradient(145deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .graph-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .graph-container {
+            height: 300px;
+        }
+
+        .nernst-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            grid-column: 1 / -1;
+        }
+
+        .nernst-equation {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .nernst-variables {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .variable-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .variable-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+
+        .nernst-graph {
+            height: 250px;
+            margin-top: 20px;
+        }
+
+        .reaction-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            grid-column: 1 / -1;
+        }
+
+        .reactions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .reaction-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #ecf0f1;
+            transition: all 0.3s ease;
+        }
+
+        .reaction-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        .equation {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .voltage-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .voltage-bar {
+            flex: 1;
+            height: 25px;
+            background: #ecf0f1;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #bdc3c7;
+        }
+
+        .voltage-fill {
+            height: 100%;
+            background: linear-gradient(to right, #e74c3c, #f39c12, #27ae60);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .ion-trail {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(52, 152, 219, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fadeTrail 1s ease-out forwards;
+        }
+
+        @keyframes fadeTrail {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.3); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .battery-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .reactions {
+                grid-template-columns: 1fr;
+            }
+            
+            .nernst-variables {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>리튬 이온 배터리 시뮬레이터 - 개선판</h1>
+            <p>배터리의 충전/방전 과정과 네른스트 방정식을 시각화합니다</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 배터리 구조 시각화 -->
+            <div class="battery-section">
+                <h2>배터리 구조</h2>
+                <div class="battery-container">
+                    <div class="electrode anode">
+                        <h3>음극 (Anode)</h3>
+                        <p>흑연 (C₆)</p>
+                        <div class="lithium-ions" id="anodeLithium"></div>
+                    </div>
+                    
+                    <div class="separator">
+                        <h3>분리막</h3>
+                    </div>
+                    
+                    <div class="electrode cathode">
+                        <h3>양극 (Cathode)</h3>
+                        <p>LiCoO₂</p>
+                        <div class="lithium-ions" id="cathodeLithium"></div>
+                    </div>
+                    <div class="ion-flow" id="ionFlow"></div>
+                </div>
+                
+                <div class="external-circuit">
+                    <div class="electron-flow" id="electronFlow"></div>
+                    <div class="load">부하</div>
+                </div>
+            </div>
+
+            <!-- 제어 패널 -->
+            <div class="control-panel">
+                <h2>제어 패널</h2>
+                <div class="controls">
+                    <button id="chargeBtn" class="btn charge">충전</button>
+                    <button id="dischargeBtn" class="btn discharge">방전</button>
+                    <button id="pauseBtn" class="btn pause">일시정지</button>
+                    <button id="resetBtn" class="btn reset">리셋</button>
+                </div>
+                
+                <div class="status">
+                    <div class="status-item">
+                        <label>배터리 상태:</label>
+                        <span id="batteryStatus">대기</span>
+                    </div>
+                    <div class="status-item">
+                        <label>전압:</label>
+                        <span id="voltage">3.7V</span>
+                    </div>
+                    <div class="status-item">
+                        <label>충전량:</label>
+                        <span id="capacity">50%</span>
+                    </div>
+                </div>
+
+                <div class="voltage-indicator">
+                    <span>전압:</span>
+                    <div class="voltage-bar">
+                        <div class="voltage-fill" id="voltageFill"></div>
+                    </div>
+                    <span id="voltagePercent">50%</span>
+                </div>
+            </div>
+
+            <!-- 그래프 섹션 -->
+            <div class="graph-section">
+                <h2>성능 그래프</h2>
+                <div class="graph-container">
+                    <canvas id="voltageChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 네른스트 방정식 시각화 -->
+            <div class="nernst-section">
+                <h2>네른스트 방정식 시각화</h2>
+                <div class="nernst-equation">
+                    E = E° - (RT/nF) × ln(Q)
+                </div>
+                
+                <div class="nernst-variables">
+                    <div class="variable-card">
+                        <strong>E (실제 전압)</strong>
+                        <div class="variable-value" id="nernstE">3.70 V</div>
+                    </div>
+                    <div class="variable-card">
+                        <strong>E° (표준전위)</strong>
+                        <div class="variable-value" id="nernstE0">3.70 V</div>
+                    </div>
+                    <div class="variable-card">
+                        <strong>T (온도)</strong>
+                        <div class="variable-value" id="nernstT">298 K</div>
+                    </div>
+                    <div class="variable-card">
+                        <strong>Q (반응지수)</strong>
+                        <div class="variable-value" id="nernstQ">1.00</div>
+                    </div>
+                    <div class="variable-card">
+                        <strong>RT/nF</strong>
+                        <div class="variable-value" id="nernstRTnF">0.0128 V</div>
+                    </div>
+                    <div class="variable-card">
+                        <strong>ln(Q)</strong>
+                        <div class="variable-value" id="nernstLnQ">0.00</div>
+                    </div>
+                </div>
+                
+                <div class="nernst-graph">
+                    <canvas id="nernstChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 화학 반응식 -->
+            <div class="reaction-section">
+                <h2>화학 반응식</h2>
+                <div class="reactions">
+                    <div class="reaction-item">
+                        <h3>음극 반응 (방전시)</h3>
+                        <p class="equation">LiC₆ → 6C + Li⁺ + e⁻</p>
+                    </div>
+                    <div class="reaction-item">
+                        <h3>양극 반응 (방전시)</h3>
+                        <p class="equation">CoO₂ + Li⁺ + e⁻ → LiCoO₂</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BatterySimulator {
+            constructor() {
+                this.isCharging = false;
+                this.isDischarging = false;
+                this.isPaused = false;
+                this.voltage = 3.7;
+                this.capacity = 50;
+                this.timeData = [];
+                this.voltageData = [];
+                this.nernstTimeData = [];
+                this.nernstVoltageData = [];
+                this.animationId = null;
+                this.startTime = Date.now();
+                this.lastChartUpdateTime = 0;
+                this.temperature = 298; // 25°C in Kelvin
+                this.standardPotential = 3.7;
+                this.reactionQuotient = 1.0;
+                
+                this.initializeElements();
+                this.initializeCharts();
+                this.bindEvents();
+                this.createLithiumIons();
+                this.updateAllDisplays();
+            }
+
+            initializeElements() {
+                this.chargeBtn = document.getElementById('chargeBtn');
+                this.dischargeBtn = document.getElementById('dischargeBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.batteryStatus = document.getElementById('batteryStatus');
+                this.voltageDisplay = document.getElementById('voltage');
+                this.capacityDisplay = document.getElementById('capacity');
+                this.anodeLithium = document.getElementById('anodeLithium');
+                this.cathodeLithium = document.getElementById('cathodeLithium');
+                this.ionFlow = document.getElementById('ionFlow');
+                this.electronFlow = document.getElementById('electronFlow');
+                this.voltageFill = document.getElementById('voltageFill');
+                this.voltagePercent = document.getElementById('voltagePercent');
+                
+                // 네른스트 방정식 요소들
+                this.nernstE = document.getElementById('nernstE');
+                this.nernstE0 = document.getElementById('nernstE0');
+                this.nernstT = document.getElementById('nernstT');
+                this.nernstQ = document.getElementById('nernstQ');
+                this.nernstRTnF = document.getElementById('nernstRTnF');
+                this.nernstLnQ = document.getElementById('nernstLnQ');
+            }
+
+            initializeCharts() {
+                // 성능 그래프 초기화
+                const ctx = document.getElementById('voltageChart').getContext('2d');
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: this.timeData,
+                        datasets: [{
+                            label: '전압 (V)',
+                            data: this.voltageData,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 3.0,
+                                max: 4.2,
+                                title: {
+                                    display: true,
+                                    text: '전압 (V)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '시간 (초)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+
+                // 네른스트 그래프 초기화
+                const nernstCtx = document.getElementById('nernstChart').getContext('2d');
+                this.nernstChart = new Chart(nernstCtx, {
+                    type: 'line',
+                    data: {
+                        labels: this.nernstTimeData,
+                        datasets: [{
+                            label: '실제 전압 (E)',
+                            data: this.nernstVoltageData,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 3
+                        }, {
+                            label: '표준 전위 (E°)',
+                            data: Array(this.nernstTimeData.length).fill(this.standardPotential),
+                            borderColor: '#27ae60',
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 3.0,
+                                max: 4.2,
+                                title: {
+                                    display: true,
+                                    text: '전압 (V)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '시간 (초)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+
+            bindEvents() {
+                this.chargeBtn.addEventListener('click', () => this.startCharging());
+                this.dischargeBtn.addEventListener('click', () => this.startDischarging());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+            }
+
+            createLithiumIons() {
+                // 기존 이온 제거
+                this.anodeLithium.innerHTML = '';
+                this.cathodeLithium.innerHTML = '';
+                
+                // 음극에 리튬 이온 생성 (더 많이, 더 크게)
+                for (let i = 0; i < 20; i++) {
+                    this.createLithiumIon(this.anodeLithium, this.capacity > 30);
+                }
+                
+                // 양극에 리튬 이온 생성
+                for (let i = 0; i < 20; i++) {
+                    this.createLithiumIon(this.cathodeLithium, this.capacity < 70);
+                }
+            }
+
+            createLithiumIon(container, visible) {
+                const ion = document.createElement('div');
+                ion.className = 'lithium-ion';
+                ion.style.left = Math.random() * 80 + 10 + '%';
+                ion.style.top = Math.random() * 80 + 10 + '%';
+                ion.style.animationDelay = Math.random() * 2 + 's';
+                ion.style.opacity = visible ? '1' : '0.3';
+                ion.style.transform = `scale(${0.8 + Math.random() * 0.4})`;
+                container.appendChild(ion);
+            }
+
+            startCharging() {
+                if (this.capacity >= 100) {
+                    alert('배터리가 이미 완전히 충전되었습니다.');
+                    return;
+                }
+                
+                this.isCharging = true;
+                this.isDischarging = false;
+                this.isPaused = false;
+                this.batteryStatus.textContent = '충전 중';
+                this.batteryStatus.style.color = '#27ae60';
+                
+                this.createMovingParticles('charge');
+                this.animate();
+            }
+
+            startDischarging() {
+                if (this.capacity <= 0) {
+                    alert('배터리가 이미 완전히 방전되었습니다.');
+                    return;
+                }
+                
+                this.isCharging = false;
+                this.isDischarging = true;
+                this.isPaused = false;
+                this.batteryStatus.textContent = '방전 중';
+                this.batteryStatus.style.color = '#e74c3c';
+                
+                this.createMovingParticles('discharge');
+                this.animate();
+            }
+
+            pause() {
+                this.isPaused = true;
+                this.isCharging = false;
+                this.isDischarging = false;
+                this.batteryStatus.textContent = '일시정지';
+                this.batteryStatus.style.color = '#f39c12';
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                this.clearParticles();
+            }
+
+            reset() {
+                this.isPaused = false;
+                this.isCharging = false;
+                this.isDischarging = false;
+                this.voltage = 3.7;
+                this.capacity = 50;
+                this.reactionQuotient = 1.0;
+                this.batteryStatus.textContent = '대기';
+                this.batteryStatus.style.color = '#333';
+                this.startTime = Date.now();
+                
+                this.updateAllDisplays();
+                
+                // 차트 데이터 완전 초기화
+                this.timeData.length = 0;
+                this.voltageData.length = 0;
+                this.nernstTimeData.length = 0;
+                this.nernstVoltageData.length = 0;
+                
+                // 차트 업데이트
+                this.chart.data.labels = this.timeData;
+                this.chart.data.datasets[0].data = this.voltageData;
+                this.chart.update();
+                
+                this.nernstChart.data.labels = this.nernstTimeData;
+                this.nernstChart.data.datasets[0].data = this.nernstVoltageData;
+                this.nernstChart.data.datasets[1].data = [];
+                this.nernstChart.update();
+                
+                // 파티클 제거
+                this.clearParticles();
+                this.createLithiumIons();
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+
+            createMovingParticles(type) {
+                this.clearParticles();
+                
+                // 더 빈번한 이온 흐름 생성
+                this.ionInterval = setInterval(() => {
+                    if ((type === 'charge' && this.isCharging) || 
+                        (type === 'discharge' && this.isDischarging)) {
+                        this.createMovingIon(type);
+                        this.createIonTrail();
+                    }
+                }, 100); // 더 빈번하게
+                
+                // 전자 흐름 생성
+                this.electronInterval = setInterval(() => {
+                    if ((type === 'charge' && this.isCharging) || 
+                        (type === 'discharge' && this.isDischarging)) {
+                        this.createMovingElectron(type);
+                    }
+                }, 75); // 더 빈번하게
+            }
+
+            createMovingIon(type) {
+                const ion = document.createElement('div');
+                ion.className = 'moving-ion';
+                ion.style.top = Math.random() * 70 + 15 + '%';
+                
+                if (type === 'discharge') {
+                    ion.style.animationDirection = 'normal';
+                } else {
+                    ion.style.animationDirection = 'reverse';
+                }
+                
+                this.ionFlow.appendChild(ion);
+                
+                setTimeout(() => {
+                    if (ion.parentNode) {
+                        ion.parentNode.removeChild(ion);
+                    }
+                }, 2000);
+            }
+
+            createIonTrail() {
+                const trail = document.createElement('div');
+                trail.className = 'ion-trail';
+                trail.style.left = Math.random() * 100 + '%';
+                trail.style.top = Math.random() * 100 + '%';
+                
+                this.ionFlow.appendChild(trail);
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                }, 1000);
+            }
+
+            createMovingElectron(type) {
+                const electron = document.createElement('div');
+                electron.className = 'moving-electron';
+                
+                if (type === 'discharge') {
+                    electron.style.animationDirection = 'normal';
+                } else {
+                    electron.style.animationDirection = 'reverse';
+                }
+                
+                this.electronFlow.appendChild(electron);
+                
+                setTimeout(() => {
+                    if (electron.parentNode) {
+                        electron.parentNode.removeChild(electron);
+                    }
+                }, 1500);
+            }
+
+            clearParticles() {
+                if (this.ionInterval) clearInterval(this.ionInterval);
+                if (this.electronInterval) clearInterval(this.electronInterval);
+                
+                const movingIons = document.querySelectorAll('.moving-ion');
+                const movingElectrons = document.querySelectorAll('.moving-electron');
+                const ionTrails = document.querySelectorAll('.ion-trail');
+                
+                movingIons.forEach(ion => ion.remove());
+                movingElectrons.forEach(electron => electron.remove());
+                ionTrails.forEach(trail => trail.remove());
+            }
+
+            calculateNernstValues() {
+                const R = 8.314; // J/(mol·K)
+                const T = this.temperature; // K
+                const n = 1; // 전자 수
+                const F = 96485; // C/mol
+                
+                // 반응지수(Q)를 State of Charge(SoC) 기반으로 모델링하여 전압 곡선 생성
+                const soc = Math.max(0.01, Math.min(0.99, this.capacity / 100));
+                this.reactionQuotient = (1 - soc) / soc;
+                
+                const RTnF = (R * T) / (n * F);
+                const lnQ = Math.log(this.reactionQuotient);
+                
+                // 시각적 효과를 위해 Nernst 항에 스케일링 팩터 적용
+                const VISUAL_SCALING_FACTOR = 2;
+                this.voltage = this.standardPotential - (RTnF * lnQ * VISUAL_SCALING_FACTOR);
+                
+                return { RTnF, lnQ };
+            }
+
+            animate() {
+                if (this.isPaused) return;
+                
+                if (this.isCharging && this.capacity < 100) {
+                    this.capacity += 0.075;
+                } else if (this.isDischarging && this.capacity > 0) {
+                    this.capacity -= 0.075;
+                }
+                
+                // 용량 제한
+                this.capacity = Math.max(0, Math.min(100, this.capacity));
+                
+                // 네른스트 방정식으로 전압 계산
+                this.calculateNernstValues();
+                this.voltage = Math.max(3.0, Math.min(4.2, this.voltage));
+                
+                this.updateAllDisplays();
+                this.updateCharts();
+                this.updateLithiumIons();
+                
+                if ((this.isCharging && this.capacity < 100) || 
+                    (this.isDischarging && this.capacity > 0)) {
+                    this.animationId = requestAnimationFrame(() => this.animate());
+                } else {
+                    this.batteryStatus.textContent = this.capacity >= 100 ? '완전 충전' : '완전 방전';
+                    this.batteryStatus.style.color = '#95a5a6';
+                    this.isCharging = false;
+                    this.isDischarging = false;
+                    this.clearParticles();
+                }
+            }
+
+            updateAllDisplays() {
+                // 기본 디스플레이 업데이트
+                this.voltageDisplay.textContent = this.voltage.toFixed(2) + 'V';
+                this.capacityDisplay.textContent = Math.round(this.capacity) + '%';
+                
+                // 전압 표시기 업데이트
+                const percentage = ((this.voltage - 3.0) / (4.2 - 3.0)) * 100;
+                this.voltageFill.style.width = percentage + '%';
+                this.voltagePercent.textContent = Math.round(percentage) + '%';
+                
+                // 네른스트 방정식 변수들 업데이트
+                const { RTnF, lnQ } = this.calculateNernstValues();
+                
+                this.nernstE.textContent = this.voltage.toFixed(3) + ' V';
+                this.nernstE0.textContent = this.standardPotential.toFixed(2) + ' V';
+                this.nernstT.textContent = this.temperature + ' K';
+                this.nernstQ.textContent = this.reactionQuotient.toFixed(3);
+                this.nernstRTnF.textContent = RTnF.toFixed(4) + ' V';
+                this.nernstLnQ.textContent = lnQ.toFixed(3);
+            }
+
+            updateCharts() {
+                const now = Date.now();
+                if (now - this.lastChartUpdateTime < 500) {
+                    return;
+                }
+                this.lastChartUpdateTime = now;
+                
+                const currentTime = Math.round((now - this.startTime) / 1000);
+                
+                // 성능 그래프 업데이트
+                this.timeData.push(currentTime);
+                this.voltageData.push(this.voltage);
+                
+                // 네른스트 그래프 업데이트
+                this.nernstTimeData.push(currentTime);
+                this.nernstVoltageData.push(this.voltage);
+                
+                // 최대 100개 데이터 포인트 유지
+                if (this.timeData.length > 100) {
+                    this.timeData.shift();
+                    this.voltageData.shift();
+                    this.nernstTimeData.shift();
+                    this.nernstVoltageData.shift();
+                }
+                
+                // 차트 업데이트
+                this.chart.update('none');
+                
+                // 네른스트 차트의 표준전위 라인 업데이트
+                this.nernstChart.data.datasets[1].data = Array(this.nernstTimeData.length).fill(this.standardPotential);
+                this.nernstChart.update('none');
+            }
+
+            updateLithiumIons() {
+                const anodeIons = this.anodeLithium.querySelectorAll('.lithium-ion');
+                const cathodeIons = this.cathodeLithium.querySelectorAll('.lithium-ion');
+                
+                anodeIons.forEach((ion, index) => {
+                    const shouldBeVisible = this.capacity > 30;
+                    ion.style.opacity = shouldBeVisible ? '1' : '0.3';
+                    ion.style.transform = `scale(${shouldBeVisible ? 1 : 0.7})`;
+                });
+                
+                cathodeIons.forEach((ion, index) => {
+                    const shouldBeVisible = this.capacity < 70;
+                    ion.style.opacity = shouldBeVisible ? '1' : '0.3';
+                    ion.style.transform = `scale(${shouldBeVisible ? 1 : 0.7})`;
+                });
+            }
+        }
+
+        // 페이지 로드 시 시뮬레이터 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            new BatterySimulator();
+        });
+    </script>
+</body>
+</html>
