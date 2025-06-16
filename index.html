@@ -2,32 +2,173 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>HTML 페이지 선택</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>화학 도구 모음</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 100px;
+      justify-content: center;
+      padding: 20px;
     }
-    button {
-      width: 200px;
-      padding: 15px;
-      margin: 10px;
-      font-size: 18px;
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+      font-weight: 300;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+
+    .button-grid {
+      display: grid;
+      gap: 15px;
+    }
+
+    .tool-button {
+      background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
       cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .tool-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4);
+    }
+
+    .tool-button:active {
+      transform: translateY(-1px);
+    }
+
+    .tool-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .tool-button:hover::before {
+      left: 100%;
+    }
+
+    .button-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .button-description {
+      font-size: 14px;
+      opacity: 0.9;
+      line-height: 1.3;
+    }
+
+    .icon {
+      float: right;
+      font-size: 24px;
+      margin-top: -5px;
+    }
+
+    /* 각 버튼별 고유 색상 */
+    .vsepr { background: linear-gradient(45deg, #ff6b6b, #ee5a24); }
+    .smiles { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
+    .ccus { background: linear-gradient(45deg, #45b7d1, #96c93d); }
+    .battery { background: linear-gradient(45deg, #f093fb, #f5576c); }
+
+    .vsepr:hover { box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4); }
+    .smiles:hover { box-shadow: 0 10px 25px rgba(78, 205, 196, 0.4); }
+    .ccus:hover { box-shadow: 0 10px 25px rgba(69, 183, 209, 0.4); }
+    .battery:hover { box-shadow: 0 10px 25px rgba(240, 147, 251, 0.4); }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .tool-button {
+        padding: 15px;
+      }
+      
+      .button-title {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
 <body>
-
-  <h1>페이지 선택</h1>
-
-  <button onclick="location.href='VSEPR.html'">공유결합 분자 구조 분석기</button>
-  <button onclick="location.href='smile.html'">SMILES 2D & 3D 구조 시각화</button>
-  <button onclick="location.href='CCUS.html'">CCUS 기술</button>
-  <button onclick="location.href='Libattery.html'">리튬 이온 배터리 시뮬레이터</button>
-
+  <div class="container">
+    <h1>🧪 화학 도구 모음</h1>
+    <p class="subtitle">필요한 도구를 선택해주세요</p>
+    
+    <div class="button-grid">
+      <button class="tool-button vsepr" onclick="location.href='VSEPR.html'">
+        <div class="icon">⚛️</div>
+        <div class="button-title">분자 구조 분석기</div>
+        <div class="button-description">VSEPR 이론을 활용한 공유결합 분자 구조 예측</div>
+      </button>
+      
+      <button class="tool-button smiles" onclick="location.href='smile.html'">
+        <div class="icon">🔬</div>
+        <div class="button-title">SMILES 구조 시각화</div>
+        <div class="button-description">화학 구조를 2D 및 3D로 시각화하고 분석</div>
+      </button>
+      
+      <button class="tool-button ccus" onclick="location.href='CCUS.html'">
+        <div class="icon">🌱</div>
+        <div class="button-title">CCUS 기술</div>
+        <div class="button-description">탄소 포집, 활용 및 저장 기술 정보</div>
+      </button>
+      
+      <button class="tool-button battery" onclick="location.href='Libattery.html'">
+        <div class="icon">🔋</div>
+        <div class="button-title">배터리 시뮬레이터</div>
+        <div class="button-description">리튬 이온 배터리 성능 시뮬레이션</div>
+      </button>
+    </div>
+  </div>
 </body>
 </html>
