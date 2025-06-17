@@ -195,11 +195,13 @@
         }
         
         .simulation-area {
-            background: #f8f9fa;
+            background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
             border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
-            text-align: center;
+            position: relative;
+            height: 300px;
+            overflow: hidden;
         }
         
         .co2-molecule {
@@ -238,6 +240,188 @@
             color: white;
             margin-top: 50px;
             opacity: 0.8;
+        }
+
+        /* 개선된 시뮬레이션 스타일 */
+        .facility-btn, .tech-btn {
+            padding: 8px 16px;
+            margin: 5px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .facility-btn.active, .tech-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .industrial-facility {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .facility-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .facility-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .emission-rate {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .capture-unit {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .capture-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .capture-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .capture-efficiency {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .destination-choice {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .storage-option, .utilization-option {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            min-width: 100px;
+        }
+
+        .storage-option:hover, .utilization-option:hover {
+            transform: scale(1.05);
+        }
+
+        .dest-icon {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .dest-name {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .data-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .data-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .data-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .control-panel {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .facility-selector, .capture-tech-selector {
+            margin-bottom: 20px;
+        }
+
+        .facility-selector h4, .capture-tech-selector h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        @keyframes captureFlow {
+            0% { 
+                left: 20%; 
+                opacity: 1; 
+                background: #ff4444; 
+            }
+            50% { 
+                left: 50%; 
+                opacity: 0.8; 
+            }
+            100% { 
+                left: 70%; 
+                opacity: 0; 
+                background: #4CAF50; 
+                transform: scale(0.5); 
+            }
+        }
+
+        .co2-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            animation: captureFlow 2s ease-in-out forwards;
+        }
+
+        #process-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -328,7 +512,7 @@
             
             <div class="tab-container">
                 <button class="tab active" onclick="showTab('reactions')">화학 반응</button>
-                <button class="tab" onclick="showTab('simulation')">시뮬레이션</button>
+                <button class="tab" onclick="showTab('simulation')">통합 시뮬레이션</button>
                 <button class="tab" onclick="showTab('benefits')">환경 효과</button>
             </div>
             
@@ -361,21 +545,88 @@
             </div>
             
             <div id="simulation" class="tab-content">
-                <h3>CO₂ 포집 시뮬레이션</h3>
-                <div class="simulation-area">
-                    <p>CO₂ 분자들이 포집되는 과정:</p>
-                    <div id="molecules">
-                        <div class="co2-molecule"></div>
-                        <div class="co2-molecule"></div>
-                        <div class="co2-molecule"></div>
-                        <div class="co2-molecule"></div>
-                        <div class="co2-molecule"></div>
-                    </div>
-                    <br>
-                    <button class="btn" onclick="startCapture()">포집 시작</button>
-                    <button class="btn" onclick="resetSimulation()">리셋</button>
+                <h3>🏭 통합 CCUS 프로세스 시뮬레이션</h3>
+                
+                <!-- 산업 시설 선택 -->
+                <div class="facility-selector">
+                    <h4>산업 시설 선택:</h4>
+                    <button class="facility-btn active" onclick="selectFacility('power')" data-facility="power">화력발전소</button>
+                    <button class="facility-btn" onclick="selectFacility('steel')" data-facility="steel">철강공장</button>
+                    <button class="facility-btn" onclick="selectFacility('cement')" data-facility="cement">시멘트공장</button>
                 </div>
-                <div id="capture-result" style="margin-top: 20px; text-align: center; font-weight: bold;"></div>
+                
+                <!-- 포집 기술 선택 -->
+                <div class="capture-tech-selector">
+                    <h4>포집 기술 선택:</h4>
+                    <button class="tech-btn active" onclick="selectTechnology('amine')" data-tech="amine">아민 흡수</button>
+                    <button class="tech-btn" onclick="selectTechnology('solid')" data-tech="solid">고체 흡착</button>
+                    <button class="tech-btn" onclick="selectTechnology('membrane')" data-tech="membrane">분리막</button>
+                    <button class="tech-btn" onclick="selectTechnology('hybrid')" data-tech="hybrid">하이브리드</button>
+                </div>
+                
+                <!-- 시뮬레이션 영역 -->
+                <div class="simulation-area">
+                    <!-- 산업 시설 -->
+                    <div class="industrial-facility" id="facility-visual">
+                        <div class="facility-icon">🏭</div>
+                        <div class="facility-name">화력발전소</div>
+                        <div class="emission-rate">CO₂ 배출량: <span id="emission-value">850</span> kg/MWh</div>
+                    </div>
+                    
+                    <!-- CO₂ 배출 스트림 -->
+                    <div class="emission-stream" id="emission-stream">
+                        <div class="co2-particles"></div>
+                    </div>
+                    
+                    <!-- 포집 장치 -->
+                    <div class="capture-unit" id="capture-unit">
+                        <div class="capture-icon">⚗️</div>
+                        <div class="capture-name" id="capture-name">아민 흡수탑</div>
+                        <div class="capture-efficiency">포집 효율: <span id="efficiency-value">90</span>%</div>
+                    </div>
+                    
+                    <!-- 저장/활용 선택 -->
+                    <div class="destination-choice" id="destination-choice">
+                        <div class="storage-option" onclick="selectDestination('storage')">
+                            <div class="dest-icon">🏔️</div>
+                            <div class="dest-name">지질 저장</div>
+                        </div>
+                        <div class="utilization-option" onclick="selectDestination('utilization')">
+                            <div class="dest-icon">🧪</div>
+                            <div class="dest-name">화학 활용</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 실시간 데이터 패널 -->
+                <div class="data-panel">
+                    <div class="data-card">
+                        <h5>💨 총 배출량</h5>
+                        <div class="data-value" id="total-emissions">1,000 톤/일</div>
+                    </div>
+                    <div class="data-card">
+                        <h5>✅ 포집량</h5>
+                        <div class="data-value" id="total-captured">0 톤/일</div>
+                    </div>
+                    <div class="data-card">
+                        <h5>📊 감축률</h5>
+                        <div class="data-value" id="reduction-rate">0%</div>
+                    </div>
+                    <div class="data-card">
+                        <h5>💰 처리 비용</h5>
+                        <div class="data-value" id="processing-cost">$0/톤</div>
+                    </div>
+                </div>
+                
+                <!-- 컨트롤 패널 -->
+                <div class="control-panel">
+                    <button class="btn" onclick="startCCUSProcess()">🚀 CCUS 프로세스 시작</button>
+                    <button class="btn" onclick="optimizeProcess()">⚡ 프로세스 최적화</button>
+                    <button class="btn" onclick="resetCCUSSimulation()">🔄 시뮬레이션 리셋</button>
+                </div>
+                
+                <!-- 프로세스 상태 -->
+                <div id="process-status"></div>
             </div>
             
             <div id="benefits" class="tab-content">
@@ -404,6 +655,25 @@
     </div>
     
     <script>
+        // 현대 CCUS 기술 데이터
+        const ccusData = {
+            facilities: {
+                power: { name: '화력발전소', emission: 850, icon: '🏭', baseOutput: 1000 },
+                steel: { name: '철강공장', emission: 2100, icon: '🏗️', baseOutput: 800 },
+                cement: { name: '시멘트공장', emission: 900, icon: '🏭', baseOutput: 600 }
+            },
+            technologies: {
+                amine: { name: '아민 흡수탑', efficiency: 90, cost: 60, icon: '⚗️' },
+                solid: { name: '고체 흡착기', efficiency: 85, cost: 55, icon: '🔬' },
+                membrane: { name: '분리막 시스템', efficiency: 80, cost: 45, icon: '🧪' },
+                hybrid: { name: '하이브리드 시스템', efficiency: 95, cost: 80, icon: '🔧' }
+            }
+        };
+
+        let currentFacility = 'power';
+        let currentTechnology = 'amine';
+        let isProcessRunning = false;
+
         function showTab(tabName) {
             // 모든 탭 비활성화
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -417,37 +687,159 @@
         function showDetails(process) {
             alert(`${process} 단계에 대한 상세 정보를 확인하세요!\n\n각 카드를 클릭하여 더 자세한 내용을 학습할 수 있습니다.`);
         }
-        
-        function startCapture() {
-            const molecules = document.querySelectorAll('.co2-molecule');
-            const result = document.getElementById('capture-result');
+
+        function selectFacility(facilityType) {
+            currentFacility = facilityType;
             
-            molecules.forEach((molecule, index) => {
-                setTimeout(() => {
-                    molecule.style.background = '#4CAF50';
-                    molecule.style.transform = 'scale(0.8)';
-                }, index * 300);
-            });
+            // 버튼 상태 업데이트
+            document.querySelectorAll('.facility-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-facility="${facilityType}"]`).classList.add('active');
             
-            setTimeout(() => {
-                result.innerHTML = '✅ CO₂ 포집 완료! 아민과의 화학 반응을 통해 성공적으로 분리되었습니다.';
-                result.style.color = '#4CAF50';
+            // 시설 정보 업데이트
+            const facility = ccusData.facilities[facilityType];
+            document.querySelector('.facility-icon').textContent = facility.icon;
+            document.querySelector('.facility-name').textContent = facility.name;
+            document.getElementById('emission-value').textContent = facility.emission;
+            
+            updateSimulationData();
+        }
+
+        function selectTechnology(techType) {
+            currentTechnology = techType;
+            
+            // 버튼 상태 업데이트
+            document.querySelectorAll('.tech-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tech="${techType}"]`).classList.add('active');
+            
+            // 기술 정보 업데이트
+            const tech = ccusData.technologies[techType];
+            document.querySelector('.capture-icon').textContent = tech.icon;
+            document.getElementById('capture-name').textContent = tech.name;
+            document.getElementById('efficiency-value').textContent = tech.efficiency;
+            
+            updateSimulationData();
+        }
+
+        function updateSimulationData() {
+            const facility = ccusData.facilities[currentFacility];
+            const technology = ccusData.technologies[currentTechnology];
+            
+            const totalEmissions = facility.baseOutput;
+            const capturedAmount = Math.round(totalEmissions * technology.efficiency / 100);
+            const reductionRate = technology.efficiency;
+            const processingCost = technology.cost;
+            
+            document.getElementById('total-emissions').textContent = `${totalEmissions} 톤/일`;
+            document.getElementById('total-captured').textContent = `${capturedAmount} 톤/일`;
+            document.getElementById('reduction-rate').textContent = `${reductionRate}%`;
+            document.getElementById('processing-cost').textContent = `$${processingCost}/톤`;
+        }
+
+        function startCCUSProcess() {
+            if (isProcessRunning) return;
+            
+            isProcessRunning = true;
+            const statusDiv = document.getElementById('process-status');
+            const facility = ccusData.facilities[currentFacility];
+            const technology = ccusData.technologies[currentTechnology];
+            
+            // 단계별 프로세스 시뮬레이션
+            const steps = [
+                `🏭 ${facility.name}에서 CO₂ 배출 감지...`,
+                `⚗️ ${technology.name} 가동 중...`,
+                `🔄 CO₂ 포집 진행 중... (효율: ${technology.efficiency}%)`,
+                `🚛 포집된 CO₂ 수송 준비...`,
+                `✅ CCUS 프로세스 완료! ${Math.round(facility.baseOutput * technology.efficiency / 100)}톤 처리됨`
+            ];
+            
+            let currentStep = 0;
+            
+            const processInterval = setInterval(() => {
+                statusDiv.textContent = steps[currentStep];
+                statusDiv.style.color = currentStep === steps.length - 1 ? '#4CAF50' : '#667eea';
+                
+                // 시각적 효과 추가
+                if (currentStep === 2) {
+                    animateCO2Capture();
+                }
+                
+                currentStep++;
+                
+                if (currentStep >= steps.length) {
+                    clearInterval(processInterval);
+                    isProcessRunning = false;
+                }
             }, 1500);
         }
-        
-        function resetSimulation() {
-            const molecules = document.querySelectorAll('.co2-molecule');
-            const result = document.getElementById('capture-result');
+
+        function animateCO2Capture() {
+            // CO₂ 포집 애니메이션 구현
+            const emissionStream = document.getElementById('emission-stream');
+            emissionStream.innerHTML = '';
             
-            molecules.forEach(molecule => {
-                molecule.style.background = '#ff4444';
-                molecule.style.transform = 'scale(1)';
-            });
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'co2-particle';
+                    particle.style.cssText = `
+                        position: absolute;
+                        width: 8px;
+                        height: 8px;
+                        background: #ff4444;
+                        border-radius: 50%;
+                        left: 20%;
+                        top: ${20 + Math.random() * 60}%;
+                        animation: captureFlow 2s ease-in-out forwards;
+                    `;
+                    emissionStream.appendChild(particle);
+                    
+                    setTimeout(() => particle.remove(), 2000);
+                }, i * 200);
+            }
+        }
+
+        function optimizeProcess() {
+            const statusDiv = document.getElementById('process-status');
+            const currentTech = ccusData.technologies[currentTechnology];
             
-            result.innerHTML = '';
+            // 최적화 시뮬레이션
+            const optimizedEfficiency = Math.min(currentTech.efficiency + 5, 98);
+            const optimizedCost = Math.max(currentTech.cost - 5, 30);
+            
+            statusDiv.innerHTML = `
+                🔧 프로세스 최적화 완료!<br>
+                효율성: ${currentTech.efficiency}% → ${optimizedEfficiency}%<br>
+                비용: $${currentTech.cost}/톤 → $${optimizedCost}/톤
+            `;
+            statusDiv.style.color = '#4CAF50';
+            
+            // 임시로 최적화된 값 표시
+            document.getElementById('efficiency-value').textContent = optimizedEfficiency;
+            document.getElementById('processing-cost').textContent = `$${optimizedCost}/톤`;
+        }
+
+        function selectDestination(destination) {
+            const statusDiv = document.getElementById('process-status');
+            
+            if (destination === 'storage') {
+                statusDiv.innerHTML = `🏔️ 지질 저장 선택됨<br>포집된 CO₂를 심부 암층에 안전하게 저장합니다.<br>저장 안정성: 1000년+`;
+            } else {
+                statusDiv.innerHTML = `🧪 화학 활용 선택됨<br>CO₂를 유용한 화학물질로 전환합니다.<br>생성 가능: 메탄올, 개미산, 플라스틱 원료`;
+            }
+            statusDiv.style.color = '#667eea';
+        }
+
+        function resetCCUSSimulation() {
+            isProcessRunning = false;
+            document.getElementById('process-status').textContent = '';
+            document.getElementById('emission-stream').innerHTML = '';
+            
+            // 초기값으로 리셋
+            selectFacility('power');
+            selectTechnology('amine');
         }
         
-        // 페이지 로드시 애니메이션
+        // 페이지 로드시 애니메이션 및 초기화
         window.addEventListener('load', () => {
             const cards = document.querySelectorAll('.process-card');
             cards.forEach((card, index) => {
@@ -462,6 +854,9 @@
                     }, 100);
                 }, index * 200);
             });
+            
+            // 초기 시뮬레이션 데이터 로드
+            updateSimulationData();
         });
     </script>
 </body>
